@@ -41,7 +41,7 @@ export class PostsService {
             dateTo,
             limit = 10,
             offset = 0,
-            followedByUserId // ID пользователя, на чьи подписки мы смотрим
+            followedByUserId
         } = query;
 
         // 1. Формируем условия фильтрации

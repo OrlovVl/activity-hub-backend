@@ -23,7 +23,6 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // При удалении юзера удаляем его контент и связи
   posts        Post[]
   comments     Comment[]
   
@@ -45,7 +44,6 @@ model User {
 model Follow {
   followerId  Int
   followingId Int
-  // Если один из пользователей удален, связь подписки удаляется
   follower    User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
   following   User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
@@ -67,11 +65,9 @@ model Post {
   updatedAt     DateTime @updatedAt
 
   authorId      Int
-  // Если автор удален, его посты удаляются
   author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   
   subcategoryId Int
-  // Если подкатегория удалена, посты в ней обычно тоже удаляются
   subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
 
   comments      Comment[]
@@ -97,13 +93,9 @@ model Subcategory {
   updatedAt       DateTime @updatedAt
 
   mainCategoryId  Int
-  // Удаление основной категории удаляет подкатегории
   mainCategory    MainCategory @relation(fields: [mainCategoryId], references: [id], onDelete: Cascade)
 
   createdByUserId Int
-  // Если создатель удален, оставляем подкатегорию (SetNull), но т.к. поле обязательное,
-  // в этой логике обычно ставят Cascade (удаляем категорию) или меняют на optional.
-  // Оставим Cascade для соответствия структуре.
   creator         User         @relation("CreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
 
   posts           Post[]
@@ -128,7 +120,6 @@ model Comment {
   post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   parentId    Int?
-  // Если родительский комментарий удален, удаляем ответы
   parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies     Comment[] @relation("CommentReplies")
 
@@ -136,7 +127,6 @@ model Comment {
   notifications Notification[]
 }
 
-// Связующие таблицы - Всегда Cascade
 model PostLike {
   userId Int
   postId Int

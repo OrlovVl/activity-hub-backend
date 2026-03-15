@@ -5,12 +5,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class CategoriesService {
     constructor(private prisma: PrismaService) { }
 
-    // Получение всех основных категорий
     async findAllMain() {
         return this.prisma.mainCategory.findMany();
     }
 
-    // Получение дерева (уже обсуждали, но на всякий случай)
     async getTree() {
         return this.prisma.mainCategory.findMany({
             include: {
@@ -21,7 +19,6 @@ export class CategoriesService {
         });
     }
 
-    // Поиск подкатегорий по родителю
     async findSubcategories(mainCategoryId?: number, showAll: boolean = false) {
         return this.prisma.subcategory.findMany({
             where: {

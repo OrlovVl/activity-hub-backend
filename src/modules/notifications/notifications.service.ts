@@ -4,17 +4,16 @@ import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async createNotification(data: {
     type: NotificationType;
-    userId: number;       // Кому
-    sourceUserId: number; // От кого
+    userId: number;
+    sourceUserId: number;
     message: string;
     postId?: number;
     commentId?: number;
   }) {
-    // Получаем данные инициатора для денормализации
     const sourceUser = await this.prisma.user.findUnique({
       where: { id: data.sourceUserId },
       select: { username: true, avatar: true }
@@ -44,15 +43,15 @@ export class NotificationsService {
   }
 
   async markAllAsRead(userId: number) {
-  return this.prisma.notification.updateMany({
-    where: { userId, isRead: false },
-    data: { isRead: true }
-  });
-}
+    return this.prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true }
+    });
+  }
 
-async delete(id: number, userId: number) {
-  return this.prisma.notification.deleteMany({
-    where: { id, userId } // Удаляем только если оно принадлежит пользователю
-  });
-}
+  async delete(id: number, userId: number) {
+    return this.prisma.notification.deleteMany({
+      where: { id, userId }
+    });
+  }
 }

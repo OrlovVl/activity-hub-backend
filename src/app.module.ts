@@ -18,4 +18,4 @@ import { SearchModule } from './modules/search/search.module';
     SearchModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

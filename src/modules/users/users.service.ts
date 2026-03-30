@@ -19,6 +19,22 @@ export class UsersService {
     return user;
   }
 
+async findAllUsers(params: { limit?: number; offset?: number; search?: string }) {
+  const { limit = 20, offset = 0, search } = params;
+  const where = search ? {
+    OR: [
+      { username: { contains: search, mode: 'insensitive' as any } },
+      { email: { contains: search, mode: 'insensitive' as any } },
+    ]
+  } : {};
+
+  const [users, total] = await Promise.all([
+    this.prisma.user.findMany({ where, skip: +offset, take: +limit }),
+    this.prisma.user.count({ where })
+  ]);
+  return { users, total };
+}
+
   async updateProfile(id: number, dto: UpdateUserDto) {
     return this.prisma.user.update({
       where: { id },

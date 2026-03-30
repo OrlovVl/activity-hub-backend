@@ -1,145 +1,161 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
 @Injectable()
 export class PostsService {
-    constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
-    async create(authorId: number, dto: CreatePostDto) {
-        return this.prisma.post.create({
-            data: { ...dto, authorId }
-        });
+  async create(authorId: number, dto: CreatePostDto) {
+    const post = await this.prisma.post.create({
+      data: { ...dto, authorId },
+      include: { author: { select: { username: true } } },
+    });
+
+    // Уведомляем подписчиков о новом посте
+    this.eventEmitter.emit('post.created', {
+      postId: post.id,
+      authorId: post.authorId,
+      authorName: post.author.username,
+      title: post.title,
+    });
+
+    return post;
+  }
+
+  async update(id: number, userId: number, dto: UpdatePostDto) {
+    const post = await this.prisma.post.findUnique({ where: { id } });
+    if (!post) throw new NotFoundException('Пост не найден');
+
+    const updatedPost = await this.prisma.post.update({
+      where: { id },
+      data: dto,
+    });
+
+    // Если редактирует НЕ автор (например, модератор), шлем уведомление автору
+    if (post.authorId !== userId) {
+      this.eventEmitter.emit('notification.create', {
+        type: 'MODERATION',
+        userId: post.authorId,
+        sourceUserId: userId,
+        message: `Модератор отредактировал ваш пост: "${post.title}"`,
+        postId: post.id,
+      });
     }
 
-    async update(id: number, userId: number, dto: UpdatePostDto) {
-        const post = await this.prisma.post.findUnique({ where: { id } });
+    return updatedPost;
+  }
 
-        if (!post) throw new NotFoundException('Пост не найден');
-        if (post.authorId !== userId) throw new ForbiddenException('Вы не автор этого поста');
+  async delete(id: number, userId: number) {
+    const post = await this.prisma.post.findUnique({ where: { id } });
+    if (!post) throw new NotFoundException('Пост не найден');
 
-        return this.prisma.post.update({ where: { id }, data: dto });
+    // Если удаляет НЕ автор (модератор/админ), уведомляем автора перед удалением
+    if (post.authorId !== userId) {
+      this.eventEmitter.emit('notification.create', {
+        type: 'MODERATION',
+        userId: post.authorId,
+        sourceUserId: userId,
+        message: `Ваш пост "${post.title}" был удален модератором`,
+      });
     }
 
-    async delete(id: number, userId: number) {
-        const post = await this.prisma.post.findUnique({ where: { id } });
+    return this.prisma.post.delete({ where: { id } });
+  }
 
-        if (!post) throw new NotFoundException('Пост не найден');
-        if (post.authorId !== userId) throw new ForbiddenException('Вы не можете удалить чужой пост');
+  async findAll(query: any, currentUserId?: number) {
+    const { subcategoryId, authorId, tag, search, limit = 10, offset = 0 } = query;
 
-        return this.prisma.post.delete({ where: { id } });
-    }
-
-    async findAll(query: any, currentUserId?: number) {
-        const {
-            subcategoryId,
-            authorId,
-            tag,
-            sortBy,
-            dateFrom,
-            dateTo,
-            limit = 10,
-            offset = 0,
-            followedByUserId
-        } = query;
-
-        // 1. Формируем условия фильтрации
-        const where: any = {
-            subcategoryId: subcategoryId ? +subcategoryId : undefined,
-            authorId: authorId ? +authorId : undefined,
-            tags: tag ? { has: tag } : undefined,
-            createdAt: {
-                gte: dateFrom ? new Date(dateFrom) : undefined,
-                lte: dateTo ? new Date(dateTo) : undefined,
-            },
-        };
-
-        // 2. Добавляем логику ленты подписок (Followed Feed)
-        if (followedByUserId) {
-            where.author = {
-                followers: {
-                    some: {
-                        followerId: +followedByUserId
-                    }
-                }
-            };
-        }
-
-        // 3. Выполняем запрос
-        const posts = await this.prisma.post.findMany({
-            where,
-            include: {
-                author: {
-                    select: {
-                        id: true,
-                        username: true,
-                        avatar: true,
-                    }
-                },
-                // Загружаем лайк/закладку только для текущего юзера (для флагов)
-                likes: currentUserId ? { where: { userId: currentUserId } } : false,
-                bookmarks: currentUserId ? { where: { userId: currentUserId } } : false,
-                _count: {
-                    select: {
-                        comments: true,
-                        likes: true,
-                    }
-                }
-            },
-            orderBy: sortBy === 'popularity'
-                ? { likesCount: 'desc' }
-                : { createdAt: 'desc' },
-            skip: +offset,
-            take: +limit,
-        });
-
-        // 4. Мапим результат (добавляем UI-флаги)
-        return posts.map(post => {
-            const { likes, bookmarks, ...rest } = post;
-            return {
-                ...rest,
-                isLiked: likes?.length > 0,
-                isBookmarked: bookmarks?.length > 0,
-            };
-        });
-    }
-
-    async findOne(id: number, currentUserId?: number) {
-        const post = await this.prisma.post.findUnique({
-            where: { id },
-            include: {
-                author: true,
-                likes: currentUserId ? { where: { userId: currentUserId } } : false,
-                bookmarks: currentUserId ? { where: { userId: currentUserId } } : false,
-                _count: { select: { comments: true, likes: true } }
+    const posts = await this.prisma.post.findMany({
+      where: {
+        ...(subcategoryId ? { subcategoryId: +subcategoryId } : {}),
+        ...(authorId ? { authorId: +authorId } : {}),
+        ...(tag ? { tags: { has: tag } } : {}),
+        ...(search
+          ? {
+              OR: [
+                { title: { contains: search, mode: 'insensitive' as any } },
+                { content: { contains: search, mode: 'insensitive' as any } },
+              ],
             }
-        });
-        if (!post) throw new NotFoundException('Пост не найден');
+          : {}),
+      },
+      include: {
+        author: { select: { id: true, username: true, avatar: true } },
+        _count: { select: { comments: true, likes: true } },
+        // Используем currentUserId для получения состояния лайка/закладки
+        likes: currentUserId ? { where: { userId: currentUserId } } : false,
+        bookmarks: currentUserId ? { where: { userId: currentUserId } } : false,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: +limit,
+      skip: +offset,
+    });
 
-        const { likes, bookmarks, ...rest } = post;
-        return {
-            ...rest,
-            isLiked: likes?.length > 0,
-            isBookmarked: bookmarks?.length > 0,
-        };
+    // Трансформируем результат, чтобы фронтенд получал простые булевы флаги
+    return posts.map((post) => {
+      const { likes, bookmarks, ...rest } = post;
+      return {
+        ...rest,
+        isLiked: likes ? likes.length > 0 : false,
+        isBookmarked: bookmarks ? bookmarks.length > 0 : false,
+      };
+    });
+  }
+
+  async findOne(id: number, currentUserId?: number) {
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: true,
+        likes: currentUserId ? { where: { userId: currentUserId } } : false,
+        bookmarks: currentUserId ? { where: { userId: currentUserId } } : false,
+        _count: { select: { comments: true, likes: true } },
+      },
+    });
+    if (!post) throw new NotFoundException('Пост не найден');
+
+    const { likes, bookmarks, ...rest } = post;
+    return {
+      ...rest,
+      isLiked: likes ? likes.length > 0 : false,
+      isBookmarked: bookmarks ? bookmarks.length > 0 : false,
+    };
+  }
+
+  async toggleLike(userId: number, postId: number) {
+    const existing = await this.prisma.postLike.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+
+    if (existing) {
+      return this.prisma.$transaction([
+        this.prisma.postLike.delete({ where: { userId_postId: { userId, postId } } }),
+        this.prisma.post.update({ where: { id: postId }, data: { likesCount: { decrement: 1 } } }),
+      ]);
     }
 
-    async toggleLike(userId: number, postId: number) {
-        const existing = await this.prisma.postLike.findUnique({
-            where: { userId_postId: { userId, postId } }
-        });
+    const res = await this.prisma.$transaction([
+      this.prisma.postLike.create({ data: { userId, postId } }),
+      this.prisma.post.update({ where: { id: postId }, data: { likesCount: { increment: 1 } } }),
+    ]);
 
-        if (existing) {
-            return this.prisma.$transaction([
-                this.prisma.postLike.delete({ where: { userId_postId: { userId, postId } } }),
-                this.prisma.post.update({ where: { id: postId }, data: { likesCount: { decrement: 1 } } })
-            ]);
-        }
-
-        return this.prisma.$transaction([
-            this.prisma.postLike.create({ data: { userId, postId } }),
-            this.prisma.post.update({ where: { id: postId }, data: { likesCount: { increment: 1 } } })
-        ]);
+    const post = await this.prisma.post.findUnique({ where: { id: postId }, select: { authorId: true } });
+    if (post && post.authorId !== userId) {
+      this.eventEmitter.emit('notification.create', {
+        type: 'LIKE',
+        userId: post.authorId,
+        sourceUserId: userId,
+        message: `оценил ваш пост`,
+        postId,
+      });
     }
+
+    return res;
+  }
 }

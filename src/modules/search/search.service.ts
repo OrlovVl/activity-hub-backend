@@ -6,8 +6,11 @@ export class SearchService {
   constructor(private prisma: PrismaService) { }
 
   async globalSearch(query: string) {
+    // Для работы свойства 'search' нужно убедиться, что клиент пересобран.
+    // Если Prisma всё ещё ругается, используем временный fallback на 'contains'.
+    const searchString = query.trim().split(/\s+/).join(' & ');
+
     const [posts, users, subcategories] = await Promise.all([
-      // Поиск по постам
       this.prisma.post.findMany({
         where: {
           OR: [
@@ -15,23 +18,20 @@ export class SearchService {
             { content: { contains: query, mode: 'insensitive' } },
           ],
         },
-        take: 10,
+        include: { author: { select: { username: true, avatar: true } } },
+        take: 15,
       }),
-      // Поиск по пользователям
+      
       this.prisma.user.findMany({
-        where: {
-          OR: [
-            { username: { contains: query, mode: 'insensitive' } },
-            { email: { contains: query, mode: 'insensitive' } },
-          ],
-        },
+        where: { username: { contains: query, mode: 'insensitive' } },
+        select: { id: true, username: true, avatar: true, bio: true },
         take: 5,
       }),
-      // Поиск по подкатегориям
+
       this.prisma.subcategory.findMany({
         where: {
           name: { contains: query, mode: 'insensitive' },
-          isApproved: true,
+          isApproved: true
         },
         take: 5,
       }),

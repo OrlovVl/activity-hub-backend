@@ -10,6 +10,7 @@ async function bootstrap() {
     .setTitle('Activity Hub API')
     .setDescription('The activity hub backend service API description')
     .setVersion('1.0')
+    .addBearerAuth()
     .addTag('users')
     .addTag('posts')
     .build();

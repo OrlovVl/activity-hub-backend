@@ -44,9 +44,4 @@ services:
         value: minioadmin
       - key: MINIO_ROOT_PASSWORD
         value: minioadminpassword
-    ports:
-      - port: 9000
-        protocol: tcp
-      - port: 9001
-        protocol: tcp
 

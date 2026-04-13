@@ -35,10 +35,6 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./minio/Dockerfile
-    disk:
-      name: minio-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: MINIO_ROOT_USER
         value: minioadmin

@@ -3,12 +3,11 @@ databases:
     plan: free
 
 services:
-  # Backend API (NestJS)
   - name: activity-hub-backend
     type: web
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci && npx prisma generate && npx nest build
     startCommand: npx prisma migrate deploy && node dist/main
     envVars:
       - key: NODE_ENV
@@ -17,7 +16,6 @@ services:
         fromDatabase:
           name: activity-hub-db
           property: connectionString
-      # External S3-compatible storage (Cloudflare R2 / AWS S3 / Backblaze B2)
       - key: MINIO_ENDPOINT
         sync: false
       - key: MINIO_ACCESS_KEY

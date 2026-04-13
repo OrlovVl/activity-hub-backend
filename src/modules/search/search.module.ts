@@ -3,8 +3,8 @@ import { SearchService } from './search.service';
 import { SearchController } from './search.controller';
 
 @Module({
-    controllers: [SearchController],
+  controllers: [SearchController],
   providers: [SearchService],
   exports: [SearchService],
 })
-export class SearchModule { }
+export class SearchModule {}

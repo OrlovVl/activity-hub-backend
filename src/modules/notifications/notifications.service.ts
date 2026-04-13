@@ -5,7 +5,7 @@ import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   @OnEvent('notification.create')
   async handleNotificationCreate(payload: any) {
@@ -13,22 +13,27 @@ export class NotificationsService {
   }
 
   @OnEvent('post.created')
-  async handlePostCreated(payload: { postId: number; authorId: number; authorName: string; title: string }) {
+  async handlePostCreated(payload: {
+    postId: number;
+    authorId: number;
+    authorName: string;
+    title: string;
+  }) {
     const followers = await this.prisma.follow.findMany({
-      where: { followingId: payload.authorId }
+      where: { followingId: payload.authorId },
     });
 
     if (followers.length === 0) return;
 
     await this.prisma.notification.createMany({
-      data: followers.map(f => ({
+      data: followers.map((f) => ({
         type: 'FOLLOW' as NotificationType,
         userId: f.followerId,
         sourceUserId: payload.authorId,
         sourceUserName: payload.authorName,
         message: `опубликовал новый пост: ${payload.title}`,
-        postId: payload.postId
-      }))
+        postId: payload.postId,
+      })),
     });
   }
 
@@ -42,7 +47,7 @@ export class NotificationsService {
   }) {
     const sourceUser = await this.prisma.user.findUnique({
       where: { id: data.sourceUserId },
-      select: { username: true, avatar: true }
+      select: { username: true, avatar: true },
     });
 
     return this.prisma.notification.create({
@@ -61,19 +66,22 @@ export class NotificationsService {
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.notification.count({ where: { userId } }),
-      this.prisma.notification.count({ where: { userId, isRead: false } })
+      this.prisma.notification.count({ where: { userId, isRead: false } }),
     ]);
     return { notifications, total, unreadCount };
   }
 
   async markAsRead(id: number) {
-    return this.prisma.notification.update({ where: { id }, data: { isRead: true } });
+    return this.prisma.notification.update({
+      where: { id },
+      data: { isRead: true },
+    });
   }
 
   async markAllAsRead(userId: number) {
     return this.prisma.notification.updateMany({
       where: { userId, isRead: false },
-      data: { isRead: true }
+      data: { isRead: true },
     });
   }
 

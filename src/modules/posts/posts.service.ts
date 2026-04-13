@@ -1,19 +1,98 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { FilesService } from '../files/files.service';
 
 @Injectable()
 export class PostsService {
   constructor(
     private prisma: PrismaService,
     private eventEmitter: EventEmitter2,
+    private filesService: FilesService,
   ) {}
 
-  async create(authorId: number, dto: CreatePostDto) {
+  private tryParseJson(value: unknown) {
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+
+  private normalizeCreateDto(dto: any): Omit<
+    CreatePostDto,
+    'media' | 'location'
+  > & {
+    media?: any;
+    location?: any;
+  } {
+    const tagsRaw = dto?.tags;
+    const tags = Array.isArray(tagsRaw)
+      ? tagsRaw
+      : typeof tagsRaw === 'string'
+        ? this.tryParseJson(tagsRaw)
+        : undefined;
+
+    const tagsNormalized = Array.isArray(tags)
+      ? tags.map((t) => String(t))
+      : typeof tagsRaw === 'string' && tagsRaw.includes(',')
+        ? tagsRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined;
+
+    const media = this.tryParseJson(dto?.media);
+    const location = this.tryParseJson(dto?.location);
+
+    return {
+      title: dto?.title,
+      content: dto?.content,
+      subcategoryId:
+        typeof dto?.subcategoryId === 'string'
+          ? Number(dto.subcategoryId)
+          : dto?.subcategoryId,
+      tags: tagsNormalized,
+      media,
+      location,
+    } as any;
+  }
+
+  async create(
+    authorId: number,
+    dto: CreatePostDto,
+    photoFile?: Express.Multer.File,
+  ) {
+    const normalized = this.normalizeCreateDto(dto as any);
+
+    let mediaToSave: any = normalized.media;
+    if (photoFile) {
+      const uploaded = await this.filesService.uploadFile(photoFile);
+      const base =
+        mediaToSave && typeof mediaToSave === 'object' ? mediaToSave : {};
+      const existingPhotos = Array.isArray(base.photos) ? base.photos : [];
+      mediaToSave = { ...base, photos: [uploaded.url, ...existingPhotos] };
+    }
+
     const post = await this.prisma.post.create({
-      data: { ...dto, authorId },
+      data: {
+        title: normalized.title,
+        content: normalized.content,
+        subcategoryId: normalized.subcategoryId,
+        tags: normalized.tags ?? [],
+        media: mediaToSave,
+        location: normalized.location,
+        authorId,
+      },
       include: { author: { select: { username: true } } },
     });
 
@@ -69,7 +148,14 @@ export class PostsService {
   }
 
   async findAll(query: any, currentUserId?: number) {
-    const { subcategoryId, authorId, tag, search, limit = 10, offset = 0 } = query;
+    const {
+      subcategoryId,
+      authorId,
+      tag,
+      search,
+      limit = 10,
+      offset = 0,
+    } = query;
 
     const posts = await this.prisma.post.findMany({
       where: {
@@ -135,17 +221,28 @@ export class PostsService {
 
     if (existing) {
       return this.prisma.$transaction([
-        this.prisma.postLike.delete({ where: { userId_postId: { userId, postId } } }),
-        this.prisma.post.update({ where: { id: postId }, data: { likesCount: { decrement: 1 } } }),
+        this.prisma.postLike.delete({
+          where: { userId_postId: { userId, postId } },
+        }),
+        this.prisma.post.update({
+          where: { id: postId },
+          data: { likesCount: { decrement: 1 } },
+        }),
       ]);
     }
 
     const res = await this.prisma.$transaction([
       this.prisma.postLike.create({ data: { userId, postId } }),
-      this.prisma.post.update({ where: { id: postId }, data: { likesCount: { increment: 1 } } }),
+      this.prisma.post.update({
+        where: { id: postId },
+        data: { likesCount: { increment: 1 } },
+      }),
     ]);
 
-    const post = await this.prisma.post.findUnique({ where: { id: postId }, select: { authorId: true } });
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true },
+    });
     if (post && post.authorId !== userId) {
       this.eventEmitter.emit('notification.create', {
         type: 'LIKE',

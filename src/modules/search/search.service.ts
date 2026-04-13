@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class SearchService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async globalSearch(query: string) {
     // Для работы свойства 'search' нужно убедиться, что клиент пересобран.
@@ -21,7 +21,7 @@ export class SearchService {
         include: { author: { select: { username: true, avatar: true } } },
         take: 15,
       }),
-      
+
       this.prisma.user.findMany({
         where: { username: { contains: query, mode: 'insensitive' } },
         select: { id: true, username: true, avatar: true, bio: true },
@@ -31,7 +31,7 @@ export class SearchService {
       this.prisma.subcategory.findMany({
         where: {
           name: { contains: query, mode: 'insensitive' },
-          isApproved: true
+          isApproved: true,
         },
         take: 5,
       }),

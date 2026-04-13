@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -30,7 +40,10 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Добавить пост в закладки' })
-  async addBookmark(@GetUser('id') userId: number, @Param('id', ParseIntPipe) postId: number) {
+  async addBookmark(
+    @GetUser('id') userId: number,
+    @Param('id', ParseIntPipe) postId: number,
+  ) {
     return this.usersService.addBookmark(userId, postId);
   }
 }

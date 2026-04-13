@@ -1,5 +1,25 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -22,8 +42,34 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth() // Показывает в Swagger, что нужен токен
   @ApiOperation({ summary: 'Создать новый пост' })
-  async create(@GetUser('id') userId: number, @Body() dto: CreatePostDto) {
-    return this.postsService.create(userId, dto);
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('photo'))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        content: { type: 'string' },
+        subcategoryId: { type: 'number' },
+        tags: {
+          oneOf: [
+            { type: 'string' },
+            { type: 'array', items: { type: 'string' } },
+          ],
+        },
+        media: { type: 'string', description: 'JSON string (optional)' },
+        location: { type: 'string', description: 'JSON string (optional)' },
+        photo: { type: 'string', format: 'binary' },
+      },
+      required: ['title', 'content', 'subcategoryId'],
+    },
+  })
+  async create(
+    @GetUser('id') userId: number,
+    @UploadedFile() photo: Express.Multer.File | undefined,
+    @Body() dto: any,
+  ) {
+    return this.postsService.create(userId, dto as CreatePostDto, photo);
   }
 
   @Put(':id')
@@ -33,7 +79,7 @@ export class PostsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @GetUser('id') userId: number,
-    @Body() dto: UpdatePostDto
+    @Body() dto: UpdatePostDto,
   ) {
     return this.postsService.update(id, userId, dto);
   }
@@ -42,7 +88,10 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Удалить пост' })
-  async delete(@Param('id', ParseIntPipe) id: number, @GetUser('id') userId: number) {
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
     await this.postsService.delete(id, userId);
   }
 }

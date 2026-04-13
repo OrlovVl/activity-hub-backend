@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -6,34 +10,40 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        _count: { select: { posts: true, followers: true, following: true } }
-      }
+        _count: { select: { posts: true, followers: true, following: true } },
+      },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-async findAllUsers(params: { limit?: number; offset?: number; search?: string }) {
-  const { limit = 20, offset = 0, search } = params;
-  const where = search ? {
-    OR: [
-      { username: { contains: search, mode: 'insensitive' as any } },
-      { email: { contains: search, mode: 'insensitive' as any } },
-    ]
-  } : {};
+  async findAllUsers(params: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+  }) {
+    const { limit = 20, offset = 0, search } = params;
+    const where = search
+      ? {
+          OR: [
+            { username: { contains: search, mode: 'insensitive' as any } },
+            { email: { contains: search, mode: 'insensitive' as any } },
+          ],
+        }
+      : {};
 
-  const [users, total] = await Promise.all([
-    this.prisma.user.findMany({ where, skip: +offset, take: +limit }),
-    this.prisma.user.count({ where })
-  ]);
-  return { users, total };
-}
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({ where, skip: +offset, take: +limit }),
+      this.prisma.user.count({ where }),
+    ]);
+    return { users, total };
+  }
 
   async updateProfile(id: number, dto: UpdateUserDto) {
     return this.prisma.user.update({
@@ -44,51 +54,51 @@ async findAllUsers(params: { limit?: number; offset?: number; search?: string })
 
   async follow(followerId: number, followingId: number) {
     return this.prisma.follow.create({
-      data: { followerId, followingId }
+      data: { followerId, followingId },
     });
   }
 
   async unfollow(followerId: number, followingId: number) {
     return this.prisma.follow.delete({
-      where: { followerId_followingId: { followerId, followingId } }
+      where: { followerId_followingId: { followerId, followingId } },
     });
   }
 
   async addFavoriteSubcategory(userId: number, subcategoryId: number) {
     return this.prisma.userFavoriteSubcategory.create({
-      data: { userId, subcategoryId }
+      data: { userId, subcategoryId },
     });
   }
 
   async getFavoriteSubcategories(userId: number) {
     return this.prisma.userFavoriteSubcategory.findMany({
       where: { userId },
-      include: { subcategory: true }
+      include: { subcategory: true },
     });
   }
 
   async removeFavoriteSubcategory(userId: number, subcategoryId: number) {
     return this.prisma.userFavoriteSubcategory.delete({
-      where: { userId_subcategoryId: { userId, subcategoryId } }
+      where: { userId_subcategoryId: { userId, subcategoryId } },
     });
   }
 
   async addBookmark(userId: number, postId: number) {
     return this.prisma.bookmark.create({
-      data: { userId, postId }
+      data: { userId, postId },
     });
   }
 
   async getBookmarks(userId: number) {
     return this.prisma.bookmark.findMany({
       where: { userId },
-      include: { post: { include: { author: true } } }
+      include: { post: { include: { author: true } } },
     });
   }
 
   async removeBookmark(userId: number, postId: number) {
     return this.prisma.bookmark.delete({
-      where: { userId_postId: { userId, postId } }
+      where: { userId_postId: { userId, postId } },
     });
   }
 
@@ -101,25 +111,28 @@ async findAllUsers(params: { limit?: number; offset?: number; search?: string })
             posts: true,
             followers: true,
             following: true,
-          }
+          },
         },
         posts: {
-          select: { likesCount: true }
-        }
-      }
+          select: { likesCount: true },
+        },
+      },
     });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    const totalLikesReceived = user.posts.reduce((sum, p) => sum + p.likesCount, 0);
+    const totalLikesReceived = user.posts.reduce(
+      (sum, p) => sum + p.likesCount,
+      0,
+    );
 
     return {
       postsCount: user._count.posts,
       followersCount: user._count.followers,
       followingCount: user._count.following,
-      likesCount: totalLikesReceived
+      likesCount: totalLikesReceived,
     };
   }
 
@@ -128,13 +141,16 @@ async findAllUsers(params: { limit?: number; offset?: number; search?: string })
 
     if (!user) throw new NotFoundException('Пользователь не найден');
 
-    const isMatch = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    const isMatch = await bcrypt.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    );
     if (!isMatch) throw new ForbiddenException('Текущий пароль неверен');
 
     const newHash = await bcrypt.hash(dto.newPassword, 10);
     return this.prisma.user.update({
       where: { id },
-      data: { passwordHash: newHash }
+      data: { passwordHash: newHash },
     });
   }
 }

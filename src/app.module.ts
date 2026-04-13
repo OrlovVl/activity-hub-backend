@@ -12,6 +12,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
+import { BffModule } from './modules/bff/bff.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AuthModule } from './modules/auth/auth.module';
       playground: true,
       context: ({ req }) => ({ req }),
     }),
+    BffModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

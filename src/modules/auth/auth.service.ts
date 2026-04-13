@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
@@ -16,7 +20,7 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const candidate = await this.prisma.user.findFirst({
-      where: { OR: [{ email: dto.email }, { username: dto.username }] }
+      where: { OR: [{ email: dto.email }, { username: dto.username }] },
     });
 
     if (candidate) throw new BadRequestException('Пользователь уже существует');
@@ -27,14 +31,16 @@ export class AuthService {
         email: dto.email,
         username: dto.username,
         passwordHash,
-      }
+      },
     });
 
     return this.generateAuthResponse(user.id);
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (!user) throw new UnauthorizedException('Неверные учетные данные');
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
@@ -48,24 +54,30 @@ export class AuthService {
       where: { id: userId },
       include: {
         _count: { select: { posts: true, followers: true, following: true } },
-        favoriteSubcategories: true
-      }
+        favoriteSubcategories: true,
+      },
     });
 
     if (!user) throw new UnauthorizedException('Пользователь не найден');
 
     const stats = await this.usersService.getProfileStats(userId);
-    const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+    const token = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
     const { passwordHash, ...userData } = user;
-    
+
     return {
       token,
       user: {
         ...userData,
-        favoriteSubcategoryIds: user.favoriteSubcategories.map(s => s.subcategoryId),
-        stats
-      }
+        favoriteSubcategoryIds: user.favoriteSubcategories.map(
+          (s) => s.subcategoryId,
+        ),
+        stats,
+      },
     };
   }
 }

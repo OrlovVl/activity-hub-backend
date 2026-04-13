@@ -1,0 +1,52 @@
+databases:
+  - name: activity-hub-db
+    plan: free
+
+services:
+  # Backend API (NestJS)
+  - name: activity-hub-backend
+    type: web
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npx prisma migrate deploy && node dist/main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: activity-hub-db
+          property: connectionString
+      # MinIO (internal service)
+      - key: MINIO_ENDPOINT
+        value: http://activity-hub-minio:9000
+      - key: MINIO_ACCESS_KEY
+        value: minioadmin
+      - key: MINIO_SECRET_KEY
+        value: minioadminpassword
+      - key: MINIO_BUCKET
+        value: activity-hub
+      - key: JWT_SECRET
+        generateValue: true
+
+  # MinIO object storage (private)
+  - name: activity-hub-minio
+    type: pserv
+    runtime: docker
+    plan: free
+    dockerfilePath: ./minio/Dockerfile
+    disk:
+      name: minio-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: MINIO_ROOT_USER
+        value: minioadmin
+      - key: MINIO_ROOT_PASSWORD
+        value: minioadminpassword
+    ports:
+      - port: 9000
+        protocol: tcp
+      - port: 9001
+        protocol: tcp
+

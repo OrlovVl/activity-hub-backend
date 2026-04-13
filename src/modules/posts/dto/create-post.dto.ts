@@ -1,29 +1,40 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
-import { IsString, IsNotEmpty, IsArray, IsOptional, IsNumber, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsArray,
+  IsOptional,
+  IsNumber,
+  IsObject,
+} from 'class-validator';
 
 @InputType()
 export class CreatePostDto {
   @Field()
-  @IsString() @IsNotEmpty() 
+  @IsString()
+  @IsNotEmpty()
   title!: string;
 
   @Field()
-  @IsString() @IsNotEmpty() 
+  @IsString()
+  @IsNotEmpty()
   content!: string;
 
   @Field(() => Int)
-  @IsNumber() @IsNotEmpty() 
+  @IsNumber()
+  @IsNotEmpty()
   subcategoryId!: number;
 
   @Field(() => [String], { nullable: true })
-  @IsArray() @IsOptional() 
+  @IsArray()
+  @IsOptional()
   tags?: string[];
 
   @Field({ nullable: true })
-  @IsOptional() 
-  media?: string; 
+  @IsOptional()
+  media?: string;
 
   @Field({ nullable: true })
-  @IsOptional() 
+  @IsOptional()
   location?: string;
 }

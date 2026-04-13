@@ -8,4 +8,4 @@ import { UsersResolver } from './users.resolver';
   providers: [UsersService, UsersResolver],
   exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

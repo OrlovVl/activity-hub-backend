@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -10,7 +20,7 @@ import { GetUser } from '../../common/decorators/get-user.decorator';
 @ApiTags('categories')
 @Controller()
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) { }
+  constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get('categories/tree')
   @ApiOperation({ summary: 'Получить всё дерево категорий и подкатегорий' })
@@ -21,10 +31,12 @@ export class CategoriesController {
   @Post('subcategories')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Предложить новую подкатегорию (isApproved: false)' })
+  @ApiOperation({
+    summary: 'Предложить новую подкатегорию (isApproved: false)',
+  })
   async createSub(
-    @GetUser('id') userId: number, 
-    @Body() dto: { name: string; description: string; mainCategoryId: number }
+    @GetUser('id') userId: number,
+    @Body() dto: { name: string; description: string; mainCategoryId: number },
   ) {
     return this.categoriesService.createSubcategory(userId, dto);
   }

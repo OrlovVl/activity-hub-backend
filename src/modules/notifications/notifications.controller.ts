@@ -1,4 +1,15 @@
-import { Controller, Get, Patch, Delete, Param, Query, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Query,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -12,12 +23,17 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Получить список уведомлений текущего пользователя' })
+  @ApiOperation({
+    summary: 'Получить список уведомлений текущего пользователя',
+  })
   async findAll(
     @GetUser('id') userId: number,
     @Query('unreadOnly') unreadOnly?: string,
   ) {
-    return this.notificationsService.getFullNotifications(userId, unreadOnly === 'true');
+    return this.notificationsService.getFullNotifications(
+      userId,
+      unreadOnly === 'true',
+    );
   }
 
   @Patch(':id/read')
@@ -37,7 +53,10 @@ export class NotificationsController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Удалить уведомление' })
-  async delete(@Param('id', ParseIntPipe) id: number, @GetUser('id') userId: number) {
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
     await this.notificationsService.delete(id, userId);
   }
 }

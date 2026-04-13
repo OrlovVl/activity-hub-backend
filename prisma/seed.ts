@@ -4,7 +4,6 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-
   // 1. Создаем пользователей разных ролей
   const admin = await prisma.user.upsert({
     where: { email: 'admin@admin.com' },
@@ -73,22 +72,23 @@ async function main() {
   await prisma.post.create({
     data: {
       title: 'Обзор моего нового Ducati Monster 2026',
-      content: 'Ребята, это просто пушка! Управляемость на высоте, звук выхлопа заставляет прохожих оборачиваться. Проехал первые 500 км, делюсь впечатлениями...',
+      content:
+        'Ребята, это просто пушка! Управляемость на высоте, звук выхлопа заставляет прохожих оборачиваться. Проехал первые 500 км, делюсь впечатлениями...',
       subcategoryId: subcategory.id,
       authorId: user.id,
       tags: ['ducati', 'moto', 'review', '2026'],
       media: {
         type: 'image',
         url: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87',
-        alt: 'Red Ducati Motorcycle'
+        alt: 'Red Ducati Motorcycle',
       },
       location: {
         city: 'Moscow',
         lat: 55.7558,
         lng: 37.6173,
-        address: 'Sparrow Hills'
+        address: 'Sparrow Hills',
       },
-      likesCount: 0, 
+      likesCount: 0,
     },
   });
 

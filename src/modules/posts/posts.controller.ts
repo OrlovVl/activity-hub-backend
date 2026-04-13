@@ -4,13 +4,15 @@ import {
   Post,
   Put,
   Delete,
-  Body,
   Param,
+  Body,
   Query,
   ParseIntPipe,
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,8 +27,9 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../../common/decorators/get-user.decorator';
+import { Multer } from "multer"
 
-@ApiTags('posts') // Группа в Swagger
+@ApiTags('posts')
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
@@ -35,7 +38,38 @@ export class PostsController {
   @ApiOperation({ summary: 'Получить список всех постов с фильтрацией' })
   async findAll(@Query() query: any, @GetUser('id') userId?: number) {
     // userId подтянется автоматически, если токен передан
-    return this.postsService.findAll(query, userId);
+    const posts = await this.postsService.findAll(query, userId);
+    return { posts, total: Array.isArray(posts) ? posts.length : 0 };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Получить пост по id' })
+  async findOne(@Param('id', ParseIntPipe) id: number, @GetUser('id') userId?: number) {
+    return this.postsService.findOne(id, userId);
+  }
+
+  @Post(':id/like')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Поставить/убрать лайк на пост' })
+  async like(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
+    await this.postsService.toggleLike(userId, id);
+  }
+
+  @Delete(':id/like')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Убрать лайк с поста (совместимость)' })
+  async unlike(
+    @Param('id', ParseIntPipe) id: number,
+    @GetUser('id') userId: number,
+  ) {
+    await this.postsService.toggleLike(userId, id);
   }
 
   @Post()

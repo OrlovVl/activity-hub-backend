@@ -3,6 +3,8 @@ import {
   Get,
   Post,
   Patch,
+  Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -22,10 +24,49 @@ import { GetUser } from '../../common/decorators/get-user.decorator';
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
+  @Get('categories')
+  @ApiOperation({ summary: 'Список главных категорий' })
+  async getMain() {
+    return this.categoriesService.findAllMain();
+  }
+
   @Get('categories/tree')
   @ApiOperation({ summary: 'Получить всё дерево категорий и подкатегорий' })
   async getTree() {
     return this.categoriesService.getTree();
+  }
+
+  @Get('subcategories')
+  @ApiOperation({ summary: 'Список подкатегорий (по желанию фильтрация)' })
+  async getSubcategories(
+    @Query('mainCategoryId') mainCategoryId?: string,
+    @Query('showAll') showAll?: string,
+  ) {
+    return this.categoriesService.findSubcategories(
+      mainCategoryId ? +mainCategoryId : undefined,
+      showAll === 'true',
+    );
+  }
+
+  @Put('subcategories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Обновить подкатегорию (персонал)' })
+  async updateSub(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: any,
+  ) {
+    return this.categoriesService.updateSubcategory(id, dto);
+  }
+
+  @Delete('subcategories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.MODERATOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Удалить подкатегорию (персонал)' })
+  async deleteSub(@Param('id', ParseIntPipe) id: number) {
+    return this.categoriesService.deleteSubcategory(id);
   }
 
   @Post('subcategories')

@@ -17,27 +17,15 @@ services:
         fromDatabase:
           name: activity-hub-db
           property: connectionString
-      # MinIO (internal service)
+      # External S3-compatible storage (Cloudflare R2 / AWS S3 / Backblaze B2)
       - key: MINIO_ENDPOINT
-        value: http://activity-hub-minio:9000
+        sync: false
       - key: MINIO_ACCESS_KEY
-        value: minioadmin
+        sync: false
       - key: MINIO_SECRET_KEY
-        value: minioadminpassword
+        sync: false
       - key: MINIO_BUCKET
-        value: activity-hub
+        sync: false
       - key: JWT_SECRET
         generateValue: true
-
-  # MinIO object storage (private)
-  - name: activity-hub-minio
-    type: pserv
-    runtime: docker
-    plan: free
-    dockerfilePath: ./minio/Dockerfile
-    envVars:
-      - key: MINIO_ROOT_USER
-        value: minioadmin
-      - key: MINIO_ROOT_PASSWORD
-        value: minioadminpassword
 

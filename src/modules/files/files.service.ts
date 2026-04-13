@@ -3,12 +3,13 @@ import * as S3 from 'aws-sdk';
 
 @Injectable()
 export class FilesService {
-  private readonly endpoint =
-    process.env.MINIO_ENDPOINT || 'http://localhost:9000';
-  private readonly accessKeyId = process.env.MINIO_ACCESS_KEY || 'minioadmin';
-  private readonly secretAccessKey =
-    process.env.MINIO_SECRET_KEY || 'minioadminpassword';
+  private readonly endpoint = process.env.MINIO_ENDPOINT;
+  private readonly accessKeyId = process.env.MINIO_ACCESS_KEY;
+  private readonly secretAccessKey = process.env.MINIO_SECRET_KEY;
   private readonly defaultBucket = process.env.MINIO_BUCKET || 'activity-hub';
+  private readonly isStorageConfigured = Boolean(
+    this.endpoint && this.accessKeyId && this.secretAccessKey,
+  );
 
   private readonly s3 = new S3.S3({
     endpoint: this.endpoint,
@@ -36,6 +37,16 @@ export class FilesService {
     file: Express.Multer.File,
     bucket: string = this.defaultBucket,
   ) {
+    // Fast fallback for environments without object storage (e.g. Render free):
+    // keep app behavior working by storing inline image data URL in DB.
+    if (!this.isStorageConfigured) {
+      const dataUrl = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      return {
+        url: dataUrl,
+        key: `inline-${Date.now()}-${file.originalname}`,
+      };
+    }
+
     await this.ensureBucket(bucket);
 
     const uploadResult = await this.s3

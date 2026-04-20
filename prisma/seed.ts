@@ -75,147 +75,47 @@ async function main() {
         content: 'JavaScript — это язык программирования, который используется для создания интерактивных веб-страниц. Начните с основ синтаксиса и постепенно переходите к более сложным темам.',
         tags: ['beginner', 'tutorial'],
         subcategoryId: 1,
-        authorId: 1,
-        likesCount: 10,
-        commentsCount: 2,
+        authorId: 1
       },
       {
         title: 'Польза бега для здоровья',
         content: 'Бег — это отличный способ поддерживать форму и укреплять сердечно-сосудистую систему. Начните с коротких дистанций и постепенно увеличивайте нагрузку.',
         tags: ['health', 'fitness'],
         subcategoryId: 4,
-        authorId: 2,
-        likesCount: 15,
-        commentsCount: 1,
+        authorId: 2
       },
       {
         title: 'История джаза',
         content: 'Джаз — это музыкальный жанр, который зародился в начале 20 века в Новом Орлеане. Узнайте больше о его развитии и знаменитых исполнителях.',
         tags: ['music', 'history'],
         subcategoryId: 6,
-        authorId: 3,
-        likesCount: 20,
-        commentsCount: 1,
+        authorId: 3
       },
       {
         title: 'Что посмотреть в Париже',
         content: 'Париж — город света искусств и культуры. Обязательно посетите Эйфелеву башню, Лувр и Мулен Руж.',
         tags: ['travel', 'guide'],
         subcategoryId: 8,
-        authorId: 1,
-        likesCount: 25,
-        commentsCount: 1,
+        authorId: 1
       },
       {
         title: 'Рецепт идеального борща',
         content: 'Борщ — это традиционное блюдо славянских народов. Секрет идеального борща — в правильном соотношении ингредиентов и длительном тушении.',
         tags: ['recipe', 'food'],
         subcategoryId: 11,
-        authorId: 2,
-        likesCount: 30,
-        commentsCount: 1,
+        authorId: 2
       },
       {
         title: 'Основы квантовой механики',
         content: 'Квантовая механика — это раздел физики, изучающий поведение материи и энергии на атомном и субатомном уровнях.',
         tags: ['science', 'physics'],
         subcategoryId: 12,
-        authorId: 3,
-        likesCount: 35,
-        commentsCount: 1,
+        authorId: 3
       },
     ],
   });
 
-  // Создание комментариев
-  const comments = await prisma.comment.createMany({
-    data: [
-      {
-        postId: 1,
-        authorId: 2,
-        content: 'Отличный пост! JavaScript действительно стоит изучить.',
-        likesCount: 0,
-        parentId: null,
-      },
-      {
-        postId: 1,
-        authorId: 3,
-        content: 'Согласен, это хороший старт для начинающих.',
-        likesCount: 0,
-        parentId: null,
-      },
-      {
-        postId: 2,
-        authorId: 1,
-        content: 'Бег — это замечательно!',
-        likesCount: 0,
-        parentId: null,
-      },
-      {
-        postId: 3,
-        authorId: 1,
-        content: 'Джаз — это потрясающая музыка.',
-        likesCount: 0,
-        parentId: null,
-      },
-      {
-        postId: 4,
-        authorId: 2,
-        content: 'Париж — красивый город, обязательно туда поеду!',
-        likesCount: 0,
-        parentId: null,
-      },
-      {
-        postId: 5,
-        authorId: 3,
-        content: 'Борщ — это классика!',
-        likesCount: 0,
-        parentId: null,
-      },
-      {
-        postId: 6,
-        authorId: 1,
-        content: 'Квантовая механика — это сложно, но интересно.',
-        likesCount: 0,
-        parentId: null,
-      },
-    ],
-  });
-
-  // Создание уведомлений
-  const notifications = await prisma.notification.createMany({
-    data: [
-      {
-        userId: 2,
-        sourceUserId: 1,
-        sourceUserName: 'ivanov_ivan',
-        message: 'petrov_petr опубликовал новый пост: Как начать изучать JavaScript',
-        type: 'FOLLOW',
-        postId: 1,
-        isRead: false,
-      },
-      {
-        userId: 3,
-        sourceUserId: 1,
-        sourceUserName: 'ivanov_ivan',
-        message: 'petrov_petr опубликовал новый пост: Польза бега для здоровья',
-        type: 'FOLLOW',
-        postId: 2,
-        isRead: false,
-      },
-      {
-        userId: 3,
-        sourceUserId: 2,
-        sourceUserName: 'petrov_petr',
-        message: 'sidorov_sidor опубликовал новый пост: История джаза',
-        type: 'FOLLOW',
-        postId: 3,
-        isRead: true,
-      },
-    ],
-  });
-
-  console.log('Тестовые данные успешно созданы!');
+  console.log('Тестовые данные созданы');
   await prisma.$disconnect();
 }
 

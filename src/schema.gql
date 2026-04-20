@@ -12,7 +12,6 @@ type Category {
 input CreatePostDto {
   content: String!
   location: String
-  media: String
   subcategoryId: Int!
   tags: [String!]
   title: String!
@@ -63,7 +62,6 @@ enum Role {
 input UpdatePostDto {
   content: String
   location: String
-  media: String
   subcategoryId: Int
   tags: [String!]
   title: String
@@ -76,7 +74,6 @@ input UpdateUserDto {
 }
 
 type User {
-  avatar: String
   createdAt: DateTime!
   email: String!
   id: Int!

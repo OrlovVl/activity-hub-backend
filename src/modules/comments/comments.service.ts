@@ -65,10 +65,10 @@ export class CommentsService {
     return this.prisma.comment.findMany({
       where: { postId, parentId: null },
       include: {
-        author: { select: { id: true, username: true, avatar: true } },
+        author: { select: { id: true, username: true } },
         replies: {
           include: {
-            author: { select: { id: true, username: true, avatar: true } },
+            author: { select: { id: true, username: true } },
           },
         },
       },

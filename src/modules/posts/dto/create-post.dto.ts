@@ -32,9 +32,5 @@ export class CreatePostDto {
 
   @Field({ nullable: true })
   @IsOptional()
-  media?: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
   location?: string;
 }

@@ -19,7 +19,6 @@ model User {
   email        String   @unique
   username     String   @unique
   passwordHash String
-  avatar       String?
   bio          String?
   role         Role     @default(USER)
   createdAt    DateTime @default(now())
@@ -57,7 +56,6 @@ model Post {
   title         String
   content       String   @db.Text
   tags          String[]
-  media         Json?    // { photos: [], route: {}, spotifyPlaylist: "" }
   location      Json?    // { lat: 0, lng: 0, name: "" }
   
   likesCount    Int      @default(0)
@@ -195,7 +193,6 @@ model Notification {
   sourceUser        User             @relation("Source", fields: [sourceUserId], references: [id], onDelete: Cascade)
   
   sourceUserName    String
-  sourceUserAvatar  String?
 
   postId            Int?
   post              Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)

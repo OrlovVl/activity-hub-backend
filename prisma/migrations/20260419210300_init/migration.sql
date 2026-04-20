@@ -10,7 +10,6 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
-    "avatar" TEXT,
     "bio" TEXT,
     "role" "Role" NOT NULL DEFAULT 'USER',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,7 +32,6 @@ CREATE TABLE "Post" (
     "title" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "tags" TEXT[],
-    "media" JSONB,
     "location" JSONB,
     "likesCount" INTEGER NOT NULL DEFAULT 0,
     "commentsCount" INTEGER NOT NULL DEFAULT 0,
@@ -133,7 +131,6 @@ CREATE TABLE "Notification" (
     "userId" INTEGER NOT NULL,
     "sourceUserId" INTEGER NOT NULL,
     "sourceUserName" TEXT NOT NULL,
-    "sourceUserAvatar" TEXT,
     "postId" INTEGER,
     "commentId" INTEGER,
     "subcategoryId" INTEGER,
@@ -146,6 +143,15 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+-- CreateIndex
+CREATE INDEX "Post_authorId_idx" ON "Post"("authorId");
+
+-- CreateIndex
+CREATE INDEX "Post_subcategoryId_idx" ON "Post"("subcategoryId");
+
+-- CreateIndex
+CREATE INDEX "Post_createdAt_idx" ON "Post"("createdAt" DESC);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "MainCategory_name_key" ON "MainCategory"("name");

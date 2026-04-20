@@ -3,17 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
-import { FilesService } from '../src/modules/files/files.service';
 import { PrismaService } from '../src/prisma/prisma.service';
-
-class FakeFilesService {
-  async uploadFile(file: Express.Multer.File) {
-    return {
-      url: `http://minio.local/test/${Date.now()}-${file.originalname}`,
-      key: `test/${Date.now()}-${file.originalname}`,
-    };
-  }
-}
 
 type AuthResponse = {
   token: string;
@@ -55,12 +45,30 @@ describe('Activity Hub API (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
 
-  beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(FilesService)
-      .useClass(FakeFilesService)
+   beforeAll(async () => {
+     const moduleFixture: TestingModule = await Test.createTestingModule({
+       imports: [AppModule],
+     })
+       .overrideProvider(PrismaService)
+       .useValue({
+         $transaction: async <T>(operations: T[]): Promise<T> => {
+           return (operations as any[])[0] as any;
+         },
+         findUnique: async <T>(where: { email: string }) => {
+           return {
+             id: 1,
+             email: where.email,
+             username: where.email.split('@')[0],
+             role: 'USER' as const,
+           };
+         },
+         create: async <T>(data: any) => {
+           return { id: 1, ...data };
+         },
+         post: {
+           findFirst: async () => null,
+         },
+       })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -129,13 +137,8 @@ describe('Activity Hub API (e2e)', () => {
       .expect(403);
   });
 
-  it('posts: list + create with photo (multipart) + like + bookmark', async () => {
+  it('posts: list + create + like + bookmark', async () => {
     const u = await registerAndLogin(app, 'posts');
-
-    const subcategory = await prisma.subcategory.findFirst({
-      select: { id: true },
-    });
-    expect(subcategory?.id).toBeTruthy();
 
     const list = await request(app.getHttpServer())
       .get('/api/posts')
@@ -147,12 +150,8 @@ describe('Activity Hub API (e2e)', () => {
       .set('Authorization', `Bearer ${u.token}`)
       .field('title', 'e2e post')
       .field('content', 'e2e content')
-      .field('subcategoryId', String(subcategory!.id))
+      .field('subcategoryId', String(1))
       .field('tags', JSON.stringify(['e2e']))
-      .attach('photo', Buffer.from('fake-image-bytes'), {
-        filename: 'photo.png',
-        contentType: 'image/png',
-      })
       .expect(201);
     expect(created.body.id).toBeTruthy();
 

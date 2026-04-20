@@ -14,9 +14,6 @@ export class User {
   @Field()
   email!: string;
 
-  @Field({ nullable: true })
-  avatar?: string;
-
   @Field(() => Role)
   role!: Role;
 

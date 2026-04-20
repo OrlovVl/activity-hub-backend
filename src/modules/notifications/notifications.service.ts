@@ -47,14 +47,13 @@ export class NotificationsService {
   }) {
     const sourceUser = await this.prisma.user.findUnique({
       where: { id: data.sourceUserId },
-      select: { username: true, avatar: true },
+      select: { username: true },
     });
 
     return this.prisma.notification.create({
       data: {
         ...data,
         sourceUserName: sourceUser?.username || 'Система',
-        sourceUserAvatar: sourceUser?.avatar,
       },
     });
   }

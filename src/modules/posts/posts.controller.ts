@@ -9,8 +9,6 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
-  UseInterceptors,
-  UploadedFile,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -21,13 +19,11 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../../common/decorators/get-user.decorator';
-import { Multer } from "multer"
 
 @ApiTags('posts')
 @Controller('posts')
@@ -37,7 +33,6 @@ export class PostsController {
   @Get()
   @ApiOperation({ summary: 'Получить список всех постов с фильтрацией' })
   async findAll(@Query() query: any, @GetUser('id') userId?: number) {
-    // userId подтянется автоматически, если токен передан
     const posts = await this.postsService.findAll(query, userId);
     return { posts, total: Array.isArray(posts) ? posts.length : 0 };
   }
@@ -74,10 +69,9 @@ export class PostsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth() // Показывает в Swagger, что нужен токен
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Создать новый пост' })
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('photo'))
+  @ApiConsumes('application/json')
   @ApiBody({
     schema: {
       type: 'object',
@@ -91,19 +85,16 @@ export class PostsController {
             { type: 'array', items: { type: 'string' } },
           ],
         },
-        media: { type: 'string', description: 'JSON string (optional)' },
         location: { type: 'string', description: 'JSON string (optional)' },
-        photo: { type: 'string', format: 'binary' },
       },
       required: ['title', 'content', 'subcategoryId'],
     },
   })
   async create(
     @GetUser('id') userId: number,
-    @UploadedFile() photo: Express.Multer.File | undefined,
-    @Body() dto: any,
+    @Body() dto: CreatePostDto,
   ) {
-    return this.postsService.create(userId, dto as CreatePostDto, photo);
+    return this.postsService.create(userId, dto);
   }
 
   @Put(':id')

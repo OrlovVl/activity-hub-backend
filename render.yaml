@@ -8,7 +8,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install && npm run build
-    startCommand: npx prisma migrate deploy && node ./dist/main.js
+    startCommand: npx prisma migrate deploy && npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,5 +16,7 @@ services:
         fromDatabase:
           name: activity-hub-db
           property: connectionString
+      - key: PORT
+        value: "3000"
       - key: JWT_SECRET
         generateValue: true

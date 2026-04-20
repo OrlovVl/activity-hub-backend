@@ -10,7 +10,4 @@ export class Category {
 
   @Field({ nullable: true })
   description?: string;
-
-  @Field({ nullable: true })
-  icon?: string;
 }

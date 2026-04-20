@@ -83,7 +83,6 @@ model Post {
 model MainCategory {
   id            Int           @id @default(autoincrement())
   name          String        @unique
-  icon          String?
   subcategories Subcategory[]
 }
 

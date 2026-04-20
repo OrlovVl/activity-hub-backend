@@ -4,7 +4,6 @@
 
 type Category {
   description: String
-  icon: String
   id: Int!
   name: String!
 }

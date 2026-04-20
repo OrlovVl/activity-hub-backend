@@ -47,7 +47,6 @@ CREATE TABLE "Post" (
 CREATE TABLE "MainCategory" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
-    "icon" TEXT,
 
     CONSTRAINT "MainCategory_pkey" PRIMARY KEY ("id")
 );

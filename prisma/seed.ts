@@ -30,12 +30,12 @@ async function main() {
   // Создание основных категорий
   const mainCategories = await prisma.mainCategory.createMany({
     data: [
-      { name: 'Программирование', icon: 'code' },
-      { name: 'Спорт', icon: 'sports' },
-      { name: 'Музыка', icon: 'music' },
-      { name: 'Путешествия', icon: 'travel' },
-      { name: 'Кулинария', icon: 'food' },
-      { name: 'Наука', icon: 'science' },
+      { name: 'Программирование' },
+      { name: 'Спорт' },
+      { name: 'Музыка' },
+      { name: 'Путешествия' },
+      { name: 'Кулинария' },
+      { name: 'Наука' },
     ],
   });
 

@@ -5,7 +5,6 @@ import {
   IsArray,
   IsOptional,
   IsNumber,
-  IsObject,
 } from 'class-validator';
 
 @InputType()

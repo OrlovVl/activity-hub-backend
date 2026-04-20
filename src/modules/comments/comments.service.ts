@@ -30,7 +30,6 @@ export class CommentsService {
       },
     });
 
-    // Сценарий 1: Ответ на комментарий
     if (dto.parentId) {
       const parentComment = await this.prisma.comment.findUnique({
         where: { id: dto.parentId },
@@ -46,7 +45,6 @@ export class CommentsService {
         });
       }
     }
-    // Сценарий 2: Комментарий к посту
     else if (comment.post.authorId !== authorId) {
       this.eventEmitter.emit('notification.create', {
         type: 'COMMENT',
@@ -85,7 +83,6 @@ export class CommentsService {
       data: { content },
     });
 
-    // Уведомление если редактирует модератор
     if (comment.authorId !== userId) {
       this.eventEmitter.emit('notification.create', {
         type: 'MODERATION',

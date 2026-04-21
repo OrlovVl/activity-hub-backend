@@ -15,6 +15,7 @@ import { GqlUser } from '../../common/decorators/gql-user.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { UsersService } from '../users/users.service';
+import { User } from '../users/models/user.model';
 
 @Resolver(() => Post)
 export class PostsResolver {
@@ -70,7 +71,7 @@ export class PostsResolver {
     return true;
   }
 
-  @ResolveField()
+  @ResolveField(() => User)
   async author(@Parent() post: any) {
     return this.usersService.findOne(post.authorId);
   }

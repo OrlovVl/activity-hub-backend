@@ -1,10 +1,25 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int, ObjectType, Field } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './models/user.model';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { GqlUser } from '../../common/decorators/gql-user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
+
+@ObjectType()
+class UserStatsType {
+  @Field(() => Int)
+  postsCount!: number;
+
+  @Field(() => Int)
+  followersCount!: number;
+
+  @Field(() => Int)
+  followingCount!: number;
+
+  @Field(() => Int)
+  likesCount!: number;
+}
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -13,7 +28,14 @@ export class UsersResolver {
   @Query(() => User, { name: 'me' })
   @UseGuards(GqlAuthGuard)
   async getMe(@GqlUser('id') userId: number) {
-    return this.usersService.findOne(userId);
+    const user = await this.usersService.findOne(userId);
+    const stats = await this.usersService.getUserStats(userId);
+    const followingIds = await this.usersService.getFollowingIds(userId);
+    return {
+      ...user,
+      stats,
+      following: followingIds,
+    };
   }
 
   @Mutation(() => User)

@@ -173,4 +173,12 @@ export class PostsService {
 
     return res;
   }
+
+  async getCommentsCount(postId: number): Promise<number> {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { commentsCount: true },
+    });
+    return post?.commentsCount ?? 0;
+  }
 }

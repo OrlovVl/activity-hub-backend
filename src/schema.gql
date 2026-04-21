@@ -22,8 +22,11 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 scalar DateTime
 
 type HomePageData {
+  activeUsers: [User]
   categories: [Category!]!
+  followedUsers: [User]
   me: User
+  subscribedPosts: [Post]
   trendingPosts: [Post!]!
 }
 
@@ -73,9 +76,21 @@ input UpdateUserDto {
 }
 
 type User {
+  avatar: String!
+  bio: String!
   createdAt: DateTime!
   email: String!
+  favoriteSubcategoryIds: [Int]
+  following: [Int]
   id: Int!
   role: Role!
+  stats: UserStats
   username: String!
+}
+
+type UserStats {
+  followersCount: Int!
+  followingCount: Int!
+  likesCount: Int!
+  postsCount: Int!
 }

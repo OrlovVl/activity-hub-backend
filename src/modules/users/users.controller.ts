@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse, ApiProperty } from '@nestjs/swagger';
 import { UsersService } from './users.service';
@@ -193,5 +194,35 @@ export class UsersController {
   ) {
     const isFollowing = await this.usersService.isFollowing(userId, targetUserId);
     return { isFollowing };
+  }
+
+  // === ADMIN ENDPOINTS ===
+
+  @Post('admin/grant-admin/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Назначить роль админа (только для администраторов)' })
+  @ApiOkResponse({ type: Object, description: 'Обновленный пользователь с ролью ADMIN' })
+  async grantAdmin(
+    @GetUser('id') adminId: number,
+    @Param('userId', ParseIntPipe) targetUserId: number,
+  ) {
+    const user = await this.usersService.grantAdminRole(adminId, targetUserId);
+    const { passwordHash, ...result } = user;
+    return { message: 'Роль администратора назначена', user: result };
+  }
+
+  @Post('admin/revoke-admin/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Отозвать роль админа (только для администраторов)' })
+  @ApiOkResponse({ type: Object, description: 'Обновленный пользователь с ролью USER' })
+  async revokeAdmin(
+    @GetUser('id') adminId: number,
+    @Param('userId', ParseIntPipe) targetUserId: number,
+  ) {
+    const user = await this.usersService.revokeAdminRole(adminId, targetUserId);
+    const { passwordHash, ...result } = user;
+    return { message: 'Роль администратора отозвана', user: result };
   }
 }

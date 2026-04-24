@@ -4,13 +4,11 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class CommentsService {
   constructor(
     private prisma: PrismaService,
-    private eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -29,32 +27,6 @@ export class CommentsService {
         post: { select: { authorId: true } },
       },
     });
-
-    if (dto.parentId) {
-      const parentComment = await this.prisma.comment.findUnique({
-        where: { id: dto.parentId },
-      });
-      if (parentComment && parentComment.authorId !== authorId) {
-        this.eventEmitter.emit('notification.create', {
-          type: 'COMMENT',
-          userId: parentComment.authorId,
-          sourceUserId: authorId,
-          message: `ответил на ваш комментарий`,
-          postId: dto.postId,
-          commentId: comment.id,
-        });
-      }
-    }
-    else if (comment.post.authorId !== authorId) {
-      this.eventEmitter.emit('notification.create', {
-        type: 'COMMENT',
-        userId: comment.post.authorId,
-        sourceUserId: authorId,
-        message: `прокомментировал ваш пост`,
-        postId: dto.postId,
-        commentId: comment.id,
-      });
-    }
 
     return comment;
   }
@@ -83,31 +55,12 @@ export class CommentsService {
       data: { content },
     });
 
-    if (comment.authorId !== userId) {
-      this.eventEmitter.emit('notification.create', {
-        type: 'MODERATION',
-        userId: comment.authorId,
-        sourceUserId: userId,
-        message: `Модератор изменил ваш комментарий`,
-        postId: comment.postId,
-      });
-    }
-
     return updated;
   }
 
   async delete(id: number, userId: number) {
     const comment = await this.prisma.comment.findUnique({ where: { id } });
     if (!comment) throw new NotFoundException();
-
-    if (comment.authorId !== userId) {
-      this.eventEmitter.emit('notification.create', {
-        type: 'MODERATION',
-        userId: comment.authorId,
-        sourceUserId: userId,
-        message: `Ваш комментарий был удален модератором`,
-      });
-    }
 
     return this.prisma.comment.delete({ where: { id } });
   }

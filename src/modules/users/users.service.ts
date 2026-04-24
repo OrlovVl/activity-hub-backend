@@ -2,10 +2,12 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -279,6 +281,59 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { passwordHash: newHash },
+    });
+  }
+
+  // Назначить роль админа другому пользователю
+  async grantAdminRole(adminId: number, targetUserId: number) {
+    // Проверяем что админ существует и сам является админом
+    const admin = await this.prisma.user.findUnique({ where: { id: adminId } });
+    if (!admin) throw new NotFoundException('Администратор не найден');
+    if (admin.role !== Role.ADMIN) {
+      throw new ForbiddenException('Только администратор может назначать администраторов');
+    }
+
+    // Проверяем целевого пользователя
+    const targetUser = await this.prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!targetUser) throw new NotFoundException('Пользователь не найден');
+
+    // Нельзя назначить себя админом повторно
+    if (adminId === targetUserId) {
+      throw new BadRequestException('Нельзя назначить самого себя');
+    }
+
+    // Обновляем роль пользователя на ADMIN
+    return this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: Role.ADMIN },
+    });
+  }
+
+  // Отозвать роль админа (только другой админ может отозвать)
+  async revokeAdminRole(adminId: number, targetUserId: number) {
+    // Проверяем что админ существует и сам является админом
+    const admin = await this.prisma.user.findUnique({ where: { id: adminId } });
+    if (!admin) throw new NotFoundException('Администратор не найден');
+    if (admin.role !== Role.ADMIN) {
+      throw new ForbiddenException('Только администратор может отзывать роль администратора');
+    }
+
+    // Проверяем целевого пользователя
+    const targetUser = await this.prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!targetUser) throw new NotFoundException('Пользователь не найден');
+    if (targetUser.role !== Role.ADMIN) {
+      throw new BadRequestException('У пользователя нет роли администратора');
+    }
+
+    // Нельзя отозвать роль у самого себя
+    if (adminId === targetUserId) {
+      throw new BadRequestException('Нельзя отозвать роль у самого себя');
+    }
+
+    // Обновляем роль пользователя на USER
+    return this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: Role.USER },
     });
   }
 }

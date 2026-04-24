@@ -10,7 +10,6 @@ datasource db {
 
 enum Role {
   USER
-  MODERATOR
   ADMIN
 }
 
@@ -36,10 +35,6 @@ model User {
 
   favoriteSubcategories  UserFavoriteSubcategory[]
   proposedSubcategories  Subcategory[] @relation("CreatedBy")
-  moderatedSubcategories SubcategoryModerator[]
-
-  notifications     Notification[] @relation("Recipient")
-  sentNotifications Notification[] @relation("Source")
 }
 
 model Follow {
@@ -73,7 +68,6 @@ model Post {
   comments      Comment[]
   likes         PostLike[]
   bookmarks     Bookmark[]
-  notifications Notification[]
 
   @@index([authorId])
   @@index([subcategoryId])
@@ -91,7 +85,6 @@ model Subcategory {
   name            String
   description     String
   isApproved      Boolean  @default(false)
-  tags            String[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -103,8 +96,6 @@ model Subcategory {
 
   posts           Post[]
   favoritedBy     UserFavoriteSubcategory[]
-  moderators      SubcategoryModerator[]
-  notifications   Notification[]
 
   @@unique([name, mainCategoryId])
 }
@@ -127,7 +118,6 @@ model Comment {
   replies     Comment[] @relation("CommentReplies")
 
   likes       CommentLike[]
-  notifications Notification[]
 }
 
 model PostLike {
@@ -160,45 +150,4 @@ model UserFavoriteSubcategory {
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
   @@id([userId, subcategoryId])
-}
-
-model SubcategoryModerator {
-  userId        Int
-  subcategoryId Int
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
-  @@id([userId, subcategoryId])
-}
-
-enum NotificationType {
-  LIKE
-  COMMENT
-  FOLLOW
-  MENTION
-  MODERATION
-}
-
-model Notification {
-  id                Int              @id @default(autoincrement())
-  type              NotificationType
-  message           String
-  isRead            Boolean          @default(false)
-  createdAt         DateTime         @default(now())
-
-  userId            Int
-  recipient         User             @relation("Recipient", fields: [userId], references: [id], onDelete: Cascade)
-
-  sourceUserId      Int
-  sourceUser        User             @relation("Source", fields: [sourceUserId], references: [id], onDelete: Cascade)
-  
-  sourceUserName    String
-
-  postId            Int?
-  post              Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  commentId         Int?
-  comment           Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
-
-  subcategoryId     Int?
-  subcategory       Subcategory?     @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
 }

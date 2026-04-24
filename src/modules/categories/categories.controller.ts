@@ -48,11 +48,11 @@ export class CategoriesController {
     );
   }
 
-  @Put('subcategories/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MODERATOR)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Обновить подкатегорию (персонал)' })
+   @Put('subcategories/:id')
+   @UseGuards(JwtAuthGuard, RolesGuard)
+   @Roles(Role.ADMIN)
+   @ApiBearerAuth()
+   @ApiOperation({ summary: 'Обновить подкатегорию (персонал)' })
   async updateSub(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: any,
@@ -60,11 +60,11 @@ export class CategoriesController {
     return this.categoriesService.updateSubcategory(id, dto);
   }
 
-  @Delete('subcategories/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MODERATOR)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Удалить подкатегорию (персонал)' })
+   @Delete('subcategories/:id')
+   @UseGuards(JwtAuthGuard, RolesGuard)
+   @Roles(Role.ADMIN)
+   @ApiBearerAuth()
+   @ApiOperation({ summary: 'Удалить подкатегорию (персонал)' })
   async deleteSub(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.deleteSubcategory(id);
   }
@@ -82,11 +82,11 @@ export class CategoriesController {
     return this.categoriesService.createSubcategory(userId, dto);
   }
 
-  @Patch('subcategories/:id/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.MODERATOR)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Одобрить подкатегорию (только для персонала)' })
+   @Patch('subcategories/:id/approve')
+   @UseGuards(JwtAuthGuard, RolesGuard)
+   @Roles(Role.ADMIN)
+   @ApiBearerAuth()
+   @ApiOperation({ summary: 'Одобрить подкатегорию (только для администраторов)' })
   async approve(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.approveSubcategory(id);
   }

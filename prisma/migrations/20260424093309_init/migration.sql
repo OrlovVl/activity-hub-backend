@@ -1,8 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('USER', 'MODERATOR', 'ADMIN');
-
--- CreateEnum
-CREATE TYPE "NotificationType" AS ENUM ('LIKE', 'COMMENT', 'FOLLOW', 'MENTION', 'MODERATION');
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -57,7 +54,6 @@ CREATE TABLE "Subcategory" (
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "isApproved" BOOLEAN NOT NULL DEFAULT false,
-    "tags" TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "mainCategoryId" INTEGER NOT NULL,
@@ -110,31 +106,6 @@ CREATE TABLE "UserFavoriteSubcategory" (
     "subcategoryId" INTEGER NOT NULL,
 
     CONSTRAINT "UserFavoriteSubcategory_pkey" PRIMARY KEY ("userId","subcategoryId")
-);
-
--- CreateTable
-CREATE TABLE "SubcategoryModerator" (
-    "userId" INTEGER NOT NULL,
-    "subcategoryId" INTEGER NOT NULL,
-
-    CONSTRAINT "SubcategoryModerator_pkey" PRIMARY KEY ("userId","subcategoryId")
-);
-
--- CreateTable
-CREATE TABLE "Notification" (
-    "id" SERIAL NOT NULL,
-    "type" "NotificationType" NOT NULL,
-    "message" TEXT NOT NULL,
-    "isRead" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "userId" INTEGER NOT NULL,
-    "sourceUserId" INTEGER NOT NULL,
-    "sourceUserName" TEXT NOT NULL,
-    "postId" INTEGER,
-    "commentId" INTEGER,
-    "subcategoryId" INTEGER,
-
-    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -208,24 +179,3 @@ ALTER TABLE "UserFavoriteSubcategory" ADD CONSTRAINT "UserFavoriteSubcategory_us
 
 -- AddForeignKey
 ALTER TABLE "UserFavoriteSubcategory" ADD CONSTRAINT "UserFavoriteSubcategory_subcategoryId_fkey" FOREIGN KEY ("subcategoryId") REFERENCES "Subcategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "SubcategoryModerator" ADD CONSTRAINT "SubcategoryModerator_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "SubcategoryModerator" ADD CONSTRAINT "SubcategoryModerator_subcategoryId_fkey" FOREIGN KEY ("subcategoryId") REFERENCES "Subcategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_sourceUserId_fkey" FOREIGN KEY ("sourceUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_commentId_fkey" FOREIGN KEY ("commentId") REFERENCES "Comment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Notification" ADD CONSTRAINT "Notification_subcategoryId_fkey" FOREIGN KEY ("subcategoryId") REFERENCES "Subcategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;

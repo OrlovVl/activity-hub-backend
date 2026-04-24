@@ -5,9 +5,7 @@ import { UsersModule } from './modules/users/users.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CommentsModule } from './modules/comments/comments.module';
-import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SearchModule } from './modules/search/search.module';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
@@ -18,12 +16,10 @@ import { BffModule } from './modules/bff/bff.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
-    EventEmitterModule.forRoot(),
     UsersModule,
     PostsModule,
     CategoriesModule,
     CommentsModule,
-    NotificationsModule,
     SearchModule,
     AuthModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({

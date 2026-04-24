@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
@@ -8,7 +7,6 @@ import { UpdatePostDto } from './dto/update-post.dto';
 export class PostsService {
   constructor(
     private prisma: PrismaService,
-    private eventEmitter: EventEmitter2,
   ) {}
 
   async create(authorId: number, dto: CreatePostDto) {
@@ -26,13 +24,6 @@ export class PostsService {
       include: { author: { select: { id: true, username: true } } },
     });
 
-    this.eventEmitter.emit('post.created', {
-      postId: post.id,
-      authorId: post.authorId,
-      authorName: post.author.username,
-      title: post.title,
-    });
-
     return post;
   }
 
@@ -45,31 +36,12 @@ export class PostsService {
       data: dto,
     });
 
-    if (post.authorId !== userId) {
-      this.eventEmitter.emit('notification.create', {
-        type: 'MODERATION',
-        userId: post.authorId,
-        sourceUserId: userId,
-        message: `Модератор отредактировал ваш пост: "${post.title}"`,
-        postId: post.id,
-      });
-    }
-
     return updatedPost;
   }
 
   async delete(id: number, userId: number) {
     const post = await this.prisma.post.findUnique({ where: { id } });
     if (!post) throw new NotFoundException('Пост не найден');
-
-    if (post.authorId !== userId) {
-      this.eventEmitter.emit('notification.create', {
-        type: 'MODERATION',
-        userId: post.authorId,
-        sourceUserId: userId,
-        message: `Ваш пост "${post.title}" был удален модератором`,
-      });
-    }
 
     return this.prisma.post.delete({ where: { id } });
   }
@@ -156,20 +128,6 @@ export class PostsService {
         data: { likesCount: { increment: 1 } },
       }),
     ]);
-
-    const post = await this.prisma.post.findUnique({
-      where: { id: postId },
-      select: { authorId: true },
-    });
-    if (post && post.authorId !== userId) {
-      this.eventEmitter.emit('notification.create', {
-        type: 'LIKE',
-        userId: post.authorId,
-        sourceUserId: userId,
-        message: `оценил ваш пост`,
-        postId,
-      });
-    }
 
     return res;
   }

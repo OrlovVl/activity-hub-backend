@@ -10,10 +10,12 @@ import {
   ParseIntPipe,
   Query,
   Req,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse, ApiProperty } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../../common/decorators/get-user.decorator';
 
@@ -82,6 +84,15 @@ export class UsersController {
   async updateMe(@GetUser('id') userId: number, @Body() dto: UpdateUserDto) {
     await this.usersService.updateProfile(userId, dto);
     return this.getMe(userId);
+  }
+
+  @Put('me/password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Смена пароля' })
+  async changePassword(@GetUser('id') userId: number, @Body() dto: ChangePasswordDto) {
+    await this.usersService.changePassword(userId, dto);
   }
 
   @Get('me/favorites/subcategories')

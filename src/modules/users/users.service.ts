@@ -70,6 +70,14 @@ export class UsersService {
       throw new ForbiddenException('Нельзя подписаться на самого себя');
     }
 
+    // Проверяем, не подписан ли уже
+    const existing = await this.prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId, followingId } },
+    });
+    if (existing) {
+      return { followed: false, follow: existing, message: 'Уже подписан' };
+    }
+
     const follow = await this.prisma.follow.create({
       data: { followerId, followingId },
     });
@@ -195,6 +203,14 @@ export class UsersService {
   }
 
   async addFavoriteSubcategory(userId: number, subcategoryId: number) {
+    // Проверяем, не добавлена ли уже подкатегория в избранное
+    const existing = await this.prisma.userFavoriteSubcategory.findUnique({
+      where: { userId_subcategoryId: { userId, subcategoryId } },
+    });
+    if (existing) {
+      return existing;
+    }
+
     return this.prisma.userFavoriteSubcategory.create({
       data: { userId, subcategoryId },
     });
@@ -214,6 +230,14 @@ export class UsersService {
   }
 
   async addBookmark(userId: number, postId: number) {
+    // Проверяем, не добавлен ли уже пост в закладки
+    const existing = await this.prisma.bookmark.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+    if (existing) {
+      return existing;
+    }
+
     return this.prisma.bookmark.create({
       data: { userId, postId },
     });
@@ -275,7 +299,7 @@ export class UsersService {
       dto.currentPassword,
       user.passwordHash,
     );
-    if (!isMatch) throw new ForbiddenException('Текущий пароль неверен');
+    if (!isMatch) throw new BadRequestException('Текущий пароль неверен');
 
     const newHash = await bcrypt.hash(dto.newPassword, 10);
     return this.prisma.user.update({
